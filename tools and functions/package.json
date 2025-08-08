@@ -1,0 +1,22 @@
+{
+  "name": "tools-and-functions",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node dist/main.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.13.0",
+    "@types/node": "^24.2.0",
+    "dotenv": "^17.2.1",
+    "prompt-sync": "^4.2.0",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/prompt-sync": "^4.2.3"
+  }
+}

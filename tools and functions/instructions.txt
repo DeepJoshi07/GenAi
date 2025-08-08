@@ -1,0 +1,22 @@
+ => modules to install
+    npm init
+    npm i dotenv
+    npm i @types/node
+    npm i ts-node
+    npm i @google/genai
+    npm i prompt-sync
+    npm i @types/prompt-sync
+
+=> set up typeScript
+    tsc --init
+    rootdir
+    outdir
+    include src
+    module => nextnode
+    moduleResolution => nextnode
+    tsc -w
+
+=> google ai
+    create a genAI instance
+    create chat
+    
