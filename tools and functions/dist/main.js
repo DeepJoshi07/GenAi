@@ -1,17 +1,9 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-import { GoogleGenAI } from "@google/genai";
+import { createUserContent, createPartFromUri, GoogleGenAI, Type, } from "@google/genai";
 import "dotenv/config";
 import PromptSync from "prompt-sync";
 const genAi = new GoogleGenAI({});
-const askAI = () => __awaiter(void 0, void 0, void 0, function* () {
+// have a chat with ai [keeping history]
+const askAI = async () => {
     const chat = genAi.chats.create({
         model: "gemini-1.5-flash",
         history: [],
@@ -20,8 +12,8 @@ const askAI = () => __awaiter(void 0, void 0, void 0, function* () {
         const input = PromptSync({ sigint: true });
         const message = input({});
         try {
-            const response = yield chat.sendMessage({
-                message
+            const response = await chat.sendMessage({
+                message,
             });
             const ans = response.candidates[0].content.parts[0].text;
             console.log(ans);
@@ -34,5 +26,95 @@ const askAI = () => __awaiter(void 0, void 0, void 0, function* () {
             break;
         }
     }
+};
+// askAI() about Image;
+// asking ai to tell or rather anylize image
+const askAIfromImg = async () => {
+    const image = await genAi.files.upload({
+        file: "src/assets/peocock.jpg",
+    });
+    const response = await genAi.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+            createUserContent([
+                "tell me about this image",
+                createPartFromUri(image.uri, image.mimeType),
+            ]),
+        ],
+    });
+    console.log(response.text);
+};
+// askAIfromImg();
+// giving ai a role like teacher,worker etc.
+const yourRole = async () => {
+    const response = await genAi.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: "what is th prob in thiz sentance?",
+        config: {
+            systemInstruction: "you are english teacher.",
+        },
+    });
+    console.log(response.text);
+};
+// yourRole();
+// streaming response
+const streamResponse = async () => {
+    const response = await genAi.models.generateContentStream({
+        model: "gemini-2.5-flash",
+        contents: "what is llm in 250 words.",
+    });
+    for await (const chunks of response) {
+        console.log(chunks.text);
+    }
+};
+// await streamResponse();
+// tools and functions
+const ai = new GoogleGenAI({});
+const get_current_temperature = async (argument) => {
+    const cityName = argument.location;
+    if (cityName == "ahmedabad") {
+        return "25degree";
+    }
+    if (cityName == "rajkot") {
+        return "30degree";
+    }
+    if (cityName == "gandhinagar") {
+        return "20degree";
+    }
+};
+const weatherFunctionDeclaration = {
+    name: 'get_current_temperature',
+    description: 'Gets the current temperature for a given location.',
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            location: {
+                type: Type.STRING,
+                description: 'The city name, e.g. San Francisco',
+            },
+        },
+        required: ['location'],
+    },
+};
+// Send request with function declarations
+const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: "What's the temperature in gandhinagar?",
+    config: {
+        tools: [{
+                functionDeclarations: [weatherFunctionDeclaration]
+            }],
+    },
 });
-askAI();
+if (response.functionCalls && response.functionCalls.length > 0) {
+    const functionCall = response.functionCalls[0]; // Assuming one function call
+    console.log(`Function to call: ${functionCall.name}`);
+    console.log(`Arguments: ${JSON.stringify(functionCall.args)}`);
+    // In a real app, you would call your actual function here:
+    const result = await get_current_temperature(functionCall.args);
+    console.log(result);
+}
+else {
+    console.log("No function call found in the response.");
+    console.log(response.text);
+}
